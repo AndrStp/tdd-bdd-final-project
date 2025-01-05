@@ -199,6 +199,11 @@ class TestProductRoutes(TestCase):
         updated_product = response.get_json()
         self.assertEqual(updated_product["description"], "unknown")
 
+        # update the product that does not exist
+        fake_id = -1
+        response = self.client.put(f"{BASE_URL}/{fake_id}", json={"id": fake_id})
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_delete_product(self):
         """It should Delete a Product"""
         products = self._create_products(5)

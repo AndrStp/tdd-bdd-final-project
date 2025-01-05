@@ -200,3 +200,96 @@ class TestProductModel(unittest.TestCase):
         self.assertEqual(found.count(), count)
         for product in found:
             self.assertEqual(product.category, category)
+
+    def test_deserialize_success(self):
+        """It should deserialize a Product from a dictionary"""
+        data = {
+            "name": "Test Product",
+            "description": "A product for testing",
+            "price": "19.99",
+            "available": True,
+            "category": "CLOTHS"
+        }
+        product = ProductFactory()
+        product.deserialize(data)
+        self.assertEqual(product.name, "Test Product")
+        self.assertEqual(product.description, "A product for testing")
+        self.assertEqual(product.price, Decimal("19.99"))
+        self.assertTrue(product.available)
+        self.assertEqual(product.category, Category.CLOTHS)
+
+    def test_deserialize_missing_key(self):
+        """It should raise a DataValidationError for missing keys"""
+        data = {
+            "name": "Test Product",
+            "description": "A product for testing",
+            "price": "19.99",
+            "available": True,
+            # "category" is missing
+        }
+        product = ProductFactory()
+        with self.assertRaises(DataValidationError) as context:
+            product.deserialize(data)
+        self.assertIn("Invalid product: missing category", str(context.exception))
+
+    def test_deserialize_invalid_available_type(self):
+        """It should raise a DataValidationError for invalid type of available"""
+        data = {
+            "name": "Test Product",
+            "description": "A product for testing",
+            "price": "19.99",
+            "available": "not_bool",  # Invalid type
+            "category": "CLOTHS"
+        }
+        product = ProductFactory()
+        with self.assertRaises(DataValidationError) as context:
+            product.deserialize(data)
+        self.assertIn("Invalid type for boolean [available]: <class 'str'>", str(context.exception))
+
+    def test_deserialize_invalid_category(self):
+        """It should raise a DataValidationError for invalid category"""
+        data = {
+            "name": "Test Product",
+            "description": "A product for testing",
+            "price": "19.99",
+            "available": True,
+            "category": "INVALID_CATEGORY"  # Invalid category
+        }
+        product = ProductFactory()
+        with self.assertRaises(DataValidationError) as context:
+            product.deserialize(data)
+        self.assertIn("Invalid attribute: INVALID_CATEGORY", str(context.exception))
+
+    def test_deserialize_missing_name(self):
+        """It should raise a DataValidationError for missing name"""
+        data = {
+            "description": "A product for testing",
+            "price": "19.99",
+            "available": True,
+            "category": "CLOTHS"
+        }
+        product = ProductFactory()
+        with self.assertRaises(DataValidationError) as context:
+            product.deserialize(data)
+        self.assertIn("Invalid product: missing name", str(context.exception))
+
+    def test_deserialize_missing_description(self):
+        """It should raise a DataValidationError for missing description"""
+        data = {
+            "name": "Test Product",
+            "price": "19.99",
+            "available": True,
+            "category": "CLOTHS"
+        }
+        product = ProductFactory()
+        with self.assertRaises(DataValidationError) as context:
+            product.deserialize(data)
+        self.assertIn("Invalid product: missing description", str(context.exception))
+
+    def test_deserialize_type_error(self):
+        """It should raise a DataValidationError for TypeError"""
+        product = ProductFactory()
+        invalid_data = None  # This will cause a TypeError when trying to access keys
+        with self.assertRaises(DataValidationError) as context:
+            product.deserialize(invalid_data)
+        self.assertIn("Invalid product: body of request contained bad or no data", str(context.exception))
